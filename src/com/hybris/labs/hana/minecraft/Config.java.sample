@@ -1,0 +1,10 @@
+package com.hybris.labs.hana.minecraft;
+
+public class Config {
+	
+	public static final String MESSAGE_TYPE = "60541d9a1fa0939ae80d";
+	public static final String SENSOR_ID = "6d1b90c3-37e6-48f7-b9be-c7ea9c2f7123";
+
+	public static final String TRIAL_ACCOUNT = "d000000trial";
+	public static final String TOKEN = "i4m4t0k3nbutn0t4r34l0n3";
+}
