@@ -28,7 +28,7 @@ import pi.Vec;
 import pi.event.BlockHitEvent;
 
 public class IoTMinecraft {
-
+	
 	public static void main(String[] args) {
 		try {
 			String minecraftServerIp = args.length > 0 ? args[0]
@@ -79,6 +79,9 @@ public class IoTMinecraft {
 		private Minecraft mc;
 		private Vec lastPos = null;
 		private boolean init;
+		
+		int prev_temp = -1;
+		int prev_light = -1;
 
 		public SerialReader(InputStream in, Minecraft mc) {
 			this.in = in;
@@ -113,8 +116,7 @@ public class IoTMinecraft {
 										Integer.parseInt(values[1].trim()));
 								this.sensorData.add(v);
 							} else {
-								System.err.println("unknown data: "
-										+ lines[lines.length - 1]);
+								System.err.println("unknown data: " + lines[lines.length - 1]);
 							}
 
 						} else {
@@ -126,8 +128,15 @@ public class IoTMinecraft {
 
 					if (!this.sensorData.isEmpty()) {
 
-						// Demos
+/***************************************************************************************
+ * 
+ * 
+ * 								D E M O S	
+ * 
+ * 
+ ***************************************************************************************/
 
+						
 						lightPixel();
 
 						// lightTempCurve();
@@ -136,11 +145,123 @@ public class IoTMinecraft {
 						// controleRoom();
 
 						// vulcano();
+						
+						
+						
 					}
 				}
 
 			} catch (IOException e) {
 				e.printStackTrace();
+			}
+		}
+		private void lightPixel() {
+
+			if (!this.init) {
+				this.init = true;
+				mc.player.setPosition(Vec.xyz(-9, 8, 13));
+				mc.setBlocks(Vec.xyz(0, 0, 0), Vec.xyz(0, 110, 0), Block.AIR);
+			}
+
+			if (lastPos != null) {
+				mc.setBlocks(lastPos, lastPos, Block.AIR);
+			}
+			
+			int light = this.sensorData.get(this.sensorData.size() - 1)
+					.getLight();
+			Double y = (50.0 / 1024) * light;
+			Vec vec = Vec.xyz(0, y.intValue(), 0);
+			mc.setBlocks(vec, vec, Block.DIAMOND_BLOCK);
+			lastPos = vec;
+		}
+		
+		private void lightTempCurve() {
+			int x = -72;
+
+			if (!this.init) {
+				this.init = true;
+				clearCurve(x);
+			}
+
+			List<BlockHitEvent> hits = mc.events.pollBlockHits();
+			for (BlockHitEvent event : hits) {
+				if (event.position.x - 1 <= x && event.position.x + 1 >= x) {
+					int index = this.sensorData.size() + event.position.z - 1;
+					if (index >= 0 || index < this.sensorData.size()) {
+						SensorData value = this.sensorData.get(index);
+						String message = "light: " + value.getLight()
+								+ " temp.: " + value.getTemp();
+						mc.postToChat(message);
+						System.out.println(message);
+					} else {
+						System.out.println("index:" + index);
+					}
+				} else {
+					System.out.println("x:" + event.position.x);
+				}
+			}
+
+			int s = this.sensorData.size() - 1;
+			int z = 0;
+			for (int i = s; i > s - 40 && i >= 0; i--) {
+				// clear column
+				mc.setBlocks(Vec.xyz(x, 0, z), Vec.xyz(x, 100, z), Block.AIR);
+
+				int light = this.sensorData.get(i).getLight();
+				Double y = (50.0 / 1024) * light;
+				Vec vec = Vec.xyz(x, y.intValue(), z);
+
+				int temp = this.sensorData.get(i).getTemp();
+
+				pi.Color color = pi.Color.BLUE;
+
+				if (temp >= 23 && temp < 25) {
+					color = pi.Color.YELLOW;
+				} else if (temp >= 25 && temp < 28) {
+					color = pi.Color.ORANGE;
+				} else if (temp >= 28) {
+					color = pi.Color.RED;
+				}
+
+				mc.setBlock(vec, Block.wool(color));
+				// Vec vec2 = Vec.xyz(x, y.intValue() + 1, z);
+				// mc.setBlock(vec2, Block.LAVA);
+				z--;
+			}
+		}
+		
+		private void waterCurve(boolean withWater) {
+			int x = -72;
+
+			if (!this.init) {
+				this.init = true;
+				clearCurve(x);
+			}
+
+			int s = this.sensorData.size() - 1;
+			int i = s;
+			if (i < 120) {
+				int z = 0 - s;
+
+				int light = this.sensorData.get(i).getLight();
+				Double y = (50.0 / 2024) * light;
+				Vec vec = Vec.xyz(x, y.intValue(), z);
+				mc.setBlock(vec, Block.STONE_BRICK);
+				Vec vec2 = Vec.xyz(x, y.intValue() + 1, z);
+				if (withWater) {
+					mc.setBlock(vec2, Block.WATER);
+				}
+				z--;
+			}
+		}
+		
+		private void clearCurve(int x) {
+			mc.player.setPosition(Vec.xyz(-54, 1, -10));
+
+			// clean all columns
+			for (int z = 1; z > -120; z--) {
+				mc.setBlocks(Vec.xyz(x - 5, 0, z), Vec.xyz(x + 5, 100, z),
+						Block.AIR);
 			}
 		}
 
@@ -190,9 +311,6 @@ public class IoTMinecraft {
 			}
 
 		}
-
-		int prev_temp = -1;
-		int prev_light = -1;
 
 		private void vulcano() {
 
@@ -251,115 +369,6 @@ public class IoTMinecraft {
 				mc.setBlocks(vec1, vec2, Block.LAVA);
 			Vec vec3 = Vec.xyz(x, y + 20, z);
 			mc.setBlocks(vec2, vec3, Block.AIR);
-		}
-
-		private void waterCurve(boolean withWater) {
-			int x = -72;
-
-			if (!this.init) {
-				this.init = true;
-				clearCurve(x);
-			}
-
-			int s = this.sensorData.size() - 1;
-			int i = s;
-			if (i < 120) {
-				int z = 0 - s;
-
-				int light = this.sensorData.get(i).getLight();
-				Double y = (50.0 / 2024) * light;
-				Vec vec = Vec.xyz(x, y.intValue(), z);
-				mc.setBlock(vec, Block.STONE_BRICK);
-				Vec vec2 = Vec.xyz(x, y.intValue() + 1, z);
-				if (withWater) {
-					mc.setBlock(vec2, Block.WATER);
-				}
-				z--;
-			}
-		}
-
-		private void lightTempCurve() {
-			int x = -72;
-
-			if (!this.init) {
-				this.init = true;
-				clearCurve(x);
-			}
-
-			List<BlockHitEvent> hits = mc.events.pollBlockHits();
-			for (BlockHitEvent event : hits) {
-				if (event.position.x - 1 <= x && event.position.x + 1 >= x) {
-					int index = this.sensorData.size() + event.position.z - 1;
-					if (index >= 0 || index < this.sensorData.size()) {
-						SensorData value = this.sensorData.get(index);
-						String message = "light: " + value.getLight()
-								+ " temp.: " + value.getTemp();
-						mc.postToChat(message);
-						System.out.println(message);
-					} else {
-						System.out.println("index:" + index);
-					}
-				} else {
-					System.out.println("x:" + event.position.x);
-				}
-			}
-
-			int s = this.sensorData.size() - 1;
-			int z = 0;
-			for (int i = s; i > s - 40 && i >= 0; i--) {
-				// clear column
-				mc.setBlocks(Vec.xyz(x, 0, z), Vec.xyz(x, 100, z), Block.AIR);
-
-				int light = this.sensorData.get(i).getLight();
-				Double y = (50.0 / 1024) * light;
-				Vec vec = Vec.xyz(x, y.intValue(), z);
-
-				int temp = this.sensorData.get(i).getTemp();
-
-				pi.Color color = pi.Color.BLUE;
-
-				if (temp >= 23 && temp < 25) {
-					color = pi.Color.YELLOW;
-				} else if (temp >= 25 && temp < 28) {
-					color = pi.Color.ORANGE;
-				} else if (temp >= 28) {
-					color = pi.Color.RED;
-				}
-
-				mc.setBlock(vec, Block.wool(color));
-				// Vec vec2 = Vec.xyz(x, y.intValue() + 1, z);
-				// mc.setBlock(vec2, Block.LAVA);
-				z--;
-			}
-		}
-
-		private void clearCurve(int x) {
-			mc.player.setPosition(Vec.xyz(-54, 1, -10));
-
-			// clean all columns
-			for (int z = 1; z > -120; z--) {
-				mc.setBlocks(Vec.xyz(x - 5, 0, z), Vec.xyz(x + 5, 100, z),
-						Block.AIR);
-			}
-		}
-
-		private void lightPixel() {
-
-			if (!this.init) {
-				this.init = true;
-				mc.player.setPosition(Vec.xyz(-9, 8, 13));
-				mc.setBlocks(Vec.xyz(0, 0, 0), Vec.xyz(0, 110, 0), Block.AIR);
-			}
-
-			if (lastPos != null) {
-				mc.setBlocks(lastPos, lastPos, Block.AIR);
-			}
-			int light = this.sensorData.get(this.sensorData.size() - 1)
-					.getLight();
-			Double y = (50.0 / 1024) * light;
-			Vec vec = Vec.xyz(0, y.intValue(), 0);
-			mc.setBlocks(vec, vec, Block.DIAMOND_BLOCK);
-			lastPos = vec;
 		}
 	}
 

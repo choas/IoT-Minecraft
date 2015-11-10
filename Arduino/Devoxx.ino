@@ -8,6 +8,7 @@ void setup() {
   Serial.begin(57600);
 }
 
+// based on http://playground.arduino.cc/Learning/OneWire ... Serial.print commented out
 String getDS18S20temperature(void) {
   byte i;
   byte present = 0;
@@ -103,22 +104,13 @@ String getDS18S20temperature(void) {
      temp += "-";
   }
   temp += Whole;
-  /*
-  temp += ".";
-  if (Fract < 10)
-  {
-     temp += "0";
-  }
-  temp += Fract;
-  */
   
   return temp;
 }
 
 
-
 void loop() {
-  // read light value (analog)
+  // read (analog) light value
   int lightValue = analogRead(A0);
   
   Serial.print(lightValue);

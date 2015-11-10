@@ -78,19 +78,19 @@ public class SerialToHana {
 						String lines[] = data.split("\n");
 
 						if (lines.length > 0) {
-							String values[] = lines[lines.length - 1]
-									.split(";");
+							String values[] = lines[lines.length - 1].split(";");
 							
 							if (values.length < 2) {
 								continue;
 							}
 							
-							System.out.println("values: " + values[0] + " "
-									+ values[1]);
+							System.out.println("values: " + values[0] + " " + values[1]);
 							
+							// next Demo :) ...
 							SendData.send(
 									Integer.parseInt(values[0]), 
 									Integer.parseInt(values[1].trim()));
+							
 						} else {
 							System.out.println("*");
 						}

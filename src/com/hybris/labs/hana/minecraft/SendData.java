@@ -2,24 +2,19 @@ package com.hybris.labs.hana.minecraft;
 
 import java.io.IOException;
 
-import com.squareup.okhttp.*;
+import com.squareup.okhttp.MediaType;
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.RequestBody;
+import com.squareup.okhttp.Response;
 
 public class SendData {
 
-//	private String  sensorId;
-//	private String messageType;
-
 	public static void main(String[] args) throws IOException {
 
-//		SendData sendData = new SendData("a9da40f2-61b7-48db-ba04-5bcbae75835e",
-//				"17455b98547835aa9e43");
+		// test data
 		SendData.send(100,30);
 	}
-	
-//	public SendData(String sensorId, String messageType) {
-////		this.sensorId = sensorId;
-//		this.messageType = messageType;
-//	}
 
 	public static int send(int light, int temperature)
 			throws IOException {
@@ -53,5 +48,4 @@ public class SendData {
 
 		return response.code();
 	}
-
 }
